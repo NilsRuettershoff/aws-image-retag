@@ -1,0 +1,47 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ecr image retagger
+
+Resources:
+  Retagger:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: retags an ecr image
+      FunctionName: retag-image
+      Handler: retag
+      CodeUri: output/retag.zip
+      MemorySize: 128
+      Runtime: go1.x
+      Timeout: 20
+      Tracing: Active
+      Policies:
+        - !Ref LambdaAccessToECR
+        - !Ref LambdaAccessToCodePipelineReport
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+
+  LambdaAccessToECR:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - ecr:BatchGetImage
+              - ecr:CompleteLayerUpload
+              - ecr:DescribeImages
+              - ecr:PutImage
+            Resource: "*"
+
+  LambdaAccessToCodePipelineReport:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - codepipeline:PutJobSuccessResult
+              - codepipeline:PutJobFailureResult
+            Resource: "*"
